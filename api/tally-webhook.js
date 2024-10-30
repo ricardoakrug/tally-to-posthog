@@ -46,7 +46,7 @@ module.exports = async function handler(req, res) {
         {
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.POSTHOG_API_KEY}` // Include the API key in the headers
+            'Authorization': 'Bearer ${process.env.POSTHOG_API_KEY}' // Include the API key in the headers
           }
         }
       );
