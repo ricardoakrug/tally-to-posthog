@@ -1,6 +1,6 @@
-import axios from 'axios';
+const axios = require('axios');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Only POST requests are allowed' });
   }
@@ -33,22 +33,20 @@ export default async function handler(req, res) {
     // Send the event to PostHog
     try {
       await axios.post('https://app.posthog.com/capture/', {
-        api_key: process.env.POSTHOG_API_KEY,  // Ensure this is set in Vercel's environment variables
+        api_key: process.env.POSTHOG_API_KEY,
         distinct_id: email,
         event: 'Survey Answered',
         properties: properties
       });
 
       console.log('Event sent to PostHog:', { email, properties });
+      return res.status(200).json({ success: true, data: properties });
     } catch (posthogError) {
-      console.error('Error sending to PostHog:', posthogError.response?.data || posthogError.message);
+      console.error('Error sending to PostHog:', posthogError.message);
       return res.status(500).json({ error: 'Failed to send event to PostHog' });
     }
-
-    // Respond with success
-    return res.status(200).json({ success: true, data: properties });
   } catch (error) {
-    console.error('Error processing webhook:', error);
+    console.error('Error processing webhook:', error.message);
     return res.status(500).json({ error: 'Failed to process webhook' });
   }
-}
+};
