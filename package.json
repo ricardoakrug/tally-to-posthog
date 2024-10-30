@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "main": "api/tally-webhook.js",
   "scripts": {
-    "postinstall": "npm install",
     "start": "node api/tally-webhook.js"
   },
   "dependencies": {
