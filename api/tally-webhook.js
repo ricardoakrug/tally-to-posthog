@@ -37,7 +37,7 @@ module.exports = async function handler(req, res) {
     // Send the event to PostHog using Axios
     try {
       const response = await axios.post(
-        'https://app.posthog.com/capture/',
+        'https://us.i.posthog.com/capture/',
         {
           distinct_id: email,
           event: 'Survey Answered',
