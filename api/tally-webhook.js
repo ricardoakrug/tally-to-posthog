@@ -1,17 +1,14 @@
+import axios from 'axios';
+
 export default async function handler(req, res) {
-  // Ensure only POST requests are allowed
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Only POST requests are allowed' });
   }
 
   try {
-    // Log the incoming request body for debugging
     console.log('Incoming request body:', req.body);
 
-    // Parse the incoming request body and check its structure
     const tallyData = req.body.data || {};
-    
-    // Check if 'fields' property exists in the incoming data
     if (!tallyData.fields) {
       console.error('Missing fields in request body:', tallyData);
       return res.status(400).json({ error: 'Missing fields in request body' });
@@ -32,14 +29,23 @@ export default async function handler(req, res) {
       }
     });
 
-    // Log the final processed data for confirmation
     console.log('Final processed data:', { email, properties });
-    
-    // Respond with success
+
+    // Send the event to PostHog
+    const posthogResponse = await axios.post('https://us.i.posthog.com/capture/', {
+      api_key: process.env.POSTHOG_API_KEY,  // Use your PostHog API key
+      event: 'Survey Answered',
+      distinct_id: email, // Use the email as the distinct_id
+      properties: properties,
+    });
+
+    // Log the response from PostHog
+    console.log('PostHog response:', posthogResponse.data);
+
+    // Return success response
     return res.status(200).json({ success: true, data: properties });
   } catch (error) {
-    // Catch and log any errors during processing
-    console.error('Error processing webhook:', error);
-    return res.status(500).json({ error: 'Failed to process webhook' });
+    console.error('Error processing webhook or sending to PostHog:', error);
+    return res.status(500).json({ error: 'Failed to process webhook or send to PostHog' });
   }
 }
