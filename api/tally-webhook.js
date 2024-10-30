@@ -1,18 +1,27 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const axios = require('axios');
+export default async function handler(req, res) {
+  // Ensure only POST requests are allowed
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Only POST requests are allowed' });
+  }
 
-const app = express();
-app.use(bodyParser.json());
-
-app.post('/api/tally-webhook', async (req, res) => {
   try {
-    // Extract the fields from the incoming Tally webhook
-    const tallyData = req.body.data;
+    // Log the incoming request body for debugging
+    console.log('Incoming request body:', req.body);
+
+    // Parse the incoming request body and check its structure
+    const tallyData = req.body.data || {};
+    
+    // Check if 'fields' property exists in the incoming data
+    if (!tallyData.fields) {
+      console.error('Missing fields in request body:', tallyData);
+      return res.status(400).json({ error: 'Missing fields in request body' });
+    }
+
+    // Extract the email field
     const emailField = tallyData.fields.find(field => field.label === 'email');
     const email = emailField ? emailField.value : 'unknown';
 
-    // Create properties object from the Tally fields
+    // Prepare properties from the Tally data fields
     const properties = {};
     tallyData.fields.forEach(field => {
       if (field.type === 'MULTIPLE_CHOICE' && field.value.length > 0) {
@@ -23,19 +32,14 @@ app.post('/api/tally-webhook', async (req, res) => {
       }
     });
 
-    // Send the data to PostHog
-    await axios.post('https://us.i.posthog.com/capture/', {
-      api_key: process.env.POSTHOG_API_KEY,
-      event: 'Survey Answered',
-      distinct_id: email,
-      properties: properties,
-    });
-
-    res.status(200).json({ success: true });
+    // Log the final processed data for confirmation
+    console.log('Final processed data:', { email, properties });
+    
+    // Respond with success
+    return res.status(200).json({ success: true, data: properties });
   } catch (error) {
+    // Catch and log any errors during processing
     console.error('Error processing webhook:', error);
-    res.status(500).json({ error: 'Failed to process webhook' });
+    return res.status(500).json({ error: 'Failed to process webhook' });
   }
-});
-
-module.exports = app;
+}
